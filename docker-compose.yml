@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
-      POSTGRES_DB: fullstack_auth
+      POSTGRES_DB: operon
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
