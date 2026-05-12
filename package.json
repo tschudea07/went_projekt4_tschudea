@@ -1,0 +1,15 @@
+{
+  "name": "operon",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c blue,green \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/web start\""
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/shared"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
