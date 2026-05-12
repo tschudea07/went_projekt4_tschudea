@@ -1,0 +1,9 @@
+{
+  "name": "operon",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/shared"
+  ]
+}

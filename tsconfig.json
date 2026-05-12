@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@operon/shared": [
+        "./packages/shared/src/index.ts"
+      ]
+    }
+  }
+}
