@@ -1,5 +1,5 @@
 -- Created by Redgate Data Modeler (https://datamodeler.redgate-platform.com)
--- Last modification date: 2026-05-12 15:16:47.424
+-- Last modification date: 2026-05-14 13:05:52.328
 
 -- tables
 -- Table: account
@@ -21,6 +21,29 @@ CREATE TABLE account (
     CONSTRAINT accounts_pk PRIMARY KEY (id)
 );
 
+-- Table: app_users
+CREATE TABLE app_users (
+    id text  NOT NULL DEFAULT gen_random_uuid(),
+    name text  NOT NULL,
+    email text  NOT NULL,
+    roles_id text  NOT NULL,
+    availibility text  NULL,
+    start_work_time time  NULL,
+    end_work_time time  NULL,
+    address text  NULL,
+    profile_picture text  NULL,
+    phone text  NULL,
+    gender text  NULL,
+    city text  NULL,
+    region text  NULL,
+    postal_code text  NULL,
+    country text  NULL,
+    created_at timestamptz  NOT NULL,
+    updated_at timestamptz  NOT NULL,
+    CONSTRAINT customer_email UNIQUE (email) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT app_users_pk PRIMARY KEY (id)
+);
+
 -- Table: comments
 CREATE TABLE comments (
     id text  NOT NULL DEFAULT gen_random_uuid(),
@@ -37,7 +60,7 @@ CREATE TABLE comments (
 
 -- Table: labels
 CREATE TABLE labels (
-    id serial  NOT NULL DEFAULT gen_random_uuid(),
+    id serial  NOT NULL,
     name text  NOT NULL,
     description text  NULL,
     CONSTRAINT labels_pk PRIMARY KEY (id)
@@ -45,7 +68,7 @@ CREATE TABLE labels (
 
 -- Table: milestones
 CREATE TABLE milestones (
-    id serial  NOT NULL DEFAULT gen_random_uuid(),
+    id serial  NOT NULL,
     name text  NOT NULL,
     description text  NULL,
     start_date timestamptz  NOT NULL,
@@ -57,7 +80,7 @@ CREATE TABLE milestones (
 
 -- Table: priorities
 CREATE TABLE priorities (
-    id serial  NOT NULL DEFAULT gen_random_uuid(),
+    id serial  NOT NULL,
     name text  NOT NULL,
     CONSTRAINT priorities_pk PRIMARY KEY (id)
 );
@@ -84,7 +107,7 @@ CREATE TABLE projects (
 
 -- Table: roles
 CREATE TABLE roles (
-    id text  NOT NULL,
+    id text  NOT NULL DEFAULT gen_random_uuid(),
     name text  NOT NULL,
     CONSTRAINT roles_pk PRIMARY KEY (id)
 );
@@ -153,29 +176,6 @@ CREATE TABLE "user" (
     CONSTRAINT users_pk PRIMARY KEY (id)
 );
 
--- Table: users
-CREATE TABLE users (
-    id text  NOT NULL,
-    name text  NOT NULL,
-    email text  NOT NULL,
-    roles_id text  NOT NULL,
-    availibility text  NULL,
-    start_work_time time  NULL,
-    end_work_time time  NULL,
-    address text  NULL,
-    profile_picture text  NULL,
-    phone text  NULL,
-    gender text  NULL,
-    city text  NULL,
-    region text  NULL,
-    postal_code text  NULL,
-    country text  NULL,
-    created_at timestamptz  NOT NULL,
-    updated_at timestamptz  NOT NULL,
-    CONSTRAINT customer_email UNIQUE (email) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT users_pk PRIMARY KEY (id)
-);
-
 -- Table: users_projects
 CREATE TABLE users_projects (
     projects_id text  NOT NULL,
@@ -215,7 +215,7 @@ ALTER TABLE users_tasks ADD CONSTRAINT Table_35_tasks
 -- Reference: Table_35_users (table: users_tasks)
 ALTER TABLE users_tasks ADD CONSTRAINT Table_35_users
     FOREIGN KEY (users_id)
-    REFERENCES users (id)  
+    REFERENCES app_users (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -255,7 +255,7 @@ ALTER TABLE comments ADD CONSTRAINT comments_tasks
 -- Reference: comments_users (table: comments)
 ALTER TABLE comments ADD CONSTRAINT comments_users
     FOREIGN KEY (users_id)
-    REFERENCES users (id)  
+    REFERENCES app_users (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -271,7 +271,7 @@ ALTER TABLE project_managers ADD CONSTRAINT project_managers_projects
 -- Reference: project_managers_users (table: project_managers)
 ALTER TABLE project_managers ADD CONSTRAINT project_managers_users
     FOREIGN KEY (users_id)
-    REFERENCES users (id)  
+    REFERENCES app_users (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -311,7 +311,7 @@ ALTER TABLE task_logs ADD CONSTRAINT task_logs_tasks
 -- Reference: task_logs_users (table: task_logs)
 ALTER TABLE task_logs ADD CONSTRAINT task_logs_users
     FOREIGN KEY (users_id)
-    REFERENCES users (id)  
+    REFERENCES app_users (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -367,21 +367,21 @@ ALTER TABLE users_projects ADD CONSTRAINT teams_projects_projects
 -- Reference: users_projects_users (table: users_projects)
 ALTER TABLE users_projects ADD CONSTRAINT users_projects_users
     FOREIGN KEY (users_id)
-    REFERENCES users (id)  
+    REFERENCES app_users (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
 
--- Reference: users_roles (table: users)
-ALTER TABLE users ADD CONSTRAINT users_roles
+-- Reference: users_roles (table: app_users)
+ALTER TABLE app_users ADD CONSTRAINT users_roles
     FOREIGN KEY (roles_id)
     REFERENCES roles (id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
 
--- Reference: users_user (table: users)
-ALTER TABLE users ADD CONSTRAINT users_user
+-- Reference: users_user (table: app_users)
+ALTER TABLE app_users ADD CONSTRAINT users_user
     FOREIGN KEY (id)
     REFERENCES "user" (id)  
     NOT DEFERRABLE 
