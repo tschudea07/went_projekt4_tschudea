@@ -14,7 +14,12 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
-    "rootDir": "../.."
+    "rootDir": "../..",
+    "baseUrl": ".",
+    "paths": {
+        "@lib/*" : ["src/lib/*"],
+        "@components/*" : ["src/app/components/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
