@@ -5,29 +5,31 @@ import {
   validateStandardSchema,
 } from '@angular/forms/signals';
 
-import { loginSchema, type LoginType } from '@operon/shared';
+import { signUpSchema, type SignUpType } from '@operon/shared';
 import { authClient } from '@lib/auth-client';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
+  selector: 'app-signup',
   imports: [FormField],
-  templateUrl: './login.html',
+  templateUrl: './signup.html',
+  styleUrl: './signup.css',
 })
-export class Login {
-  
-  constructor(private router: Router) {}
 
-  formData = signal<LoginType>({
+export class Signup {
+    constructor(private router: Router) {}
+
+formData = signal<SignUpType>({
+    name: '',
     email: '',
     password: '',
-  });
+    confirmPassword: ''
+});
 
   error = signal<string>('');
 
   form = form(this.formData, (schemaPath) => {
-    validateStandardSchema(schemaPath, loginSchema);
+    validateStandardSchema(schemaPath, signUpSchema);
   });
 
   async onSubmit(event: Event) {
@@ -39,7 +41,8 @@ export class Login {
       return;
     }
 
-    const result = await authClient.signIn.email({
+    const result = await authClient.signUp.email({
+      name: this.formData().name,
       email: this.formData().email,
       password: this.formData().password,
     });
@@ -49,6 +52,7 @@ export class Login {
       return;
     }
 
-    await this.router.navigate(['/home']);
+     await this.router.navigate(['/login']);
   }
+
 }
