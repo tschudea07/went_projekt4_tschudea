@@ -5,7 +5,7 @@ import {
   validateStandardSchema,
 } from '@angular/forms/signals';
 
-import { loginSchema, type LoginType } from '@operon/shared';
+import { loginSchema, type LoginType } from '@lib/schemas/user.schema';
 import { authClient } from '@lib/auth-client';
 import { Router } from '@angular/router';
 
@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
   imports: [FormField],
   templateUrl: './login.html',
 })
+
 export class Login {
   
   constructor(private router: Router) {}

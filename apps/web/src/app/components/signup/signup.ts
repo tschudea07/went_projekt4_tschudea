@@ -5,7 +5,7 @@ import {
   validateStandardSchema,
 } from '@angular/forms/signals';
 
-import { signUpSchema, type SignUpType } from '@operon/shared';
+import { signUpSchema, type SignUpType } from '@lib/schemas/user.schema';
 import { authClient } from '@lib/auth-client';
 import { Router } from '@angular/router';
 
