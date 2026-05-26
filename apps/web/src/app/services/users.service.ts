@@ -14,9 +14,9 @@ export class UsersService {
   private readonly http = inject(HttpClient);
   private readonly usersUrl = 'http://localhost:3000/users';
 
-  createUser(user: CreateUserRequest) {
-    return this.http.post(this.usersUrl, user, {
-      withCredentials: true,
-    });
-  }
+    createUser(user: CreateUserRequest) {
+      return this.http.post(this.usersUrl, user, {
+        withCredentials: true,
+      });
+  } 
 }

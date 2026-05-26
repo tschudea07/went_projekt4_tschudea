@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { PrismaService } from 'src/lib/services/prisma.service';
 import type { CreateUserType } from './user.schema';
 
@@ -6,22 +10,27 @@ import type { CreateUserType } from './user.schema';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-
-  create(dto: CreateUserType) {
-    return this.prisma.user.upsert({
-      where: { email: dto.email },
-      update: {
-        id: dto.id,
-        name: dto.name,
-        email: dto.email,
-        updatedAt: new Date(),
+  async create(dto: CreateUserType) {
+    const userRole = await this.prisma.roles.findFirst({
+      where: {
+        name: 'admin',
       },
-      create: {
-        id: dto.id,
-        name: dto.name,
+    });
+
+    if (!userRole) {
+      throw new NotFoundException(
+        'Role "admin" was not found.',
+      );
+    }
+
+    return this.prisma.app_users.create({
+      data: {
+        user_id: dto.id,
         email: dto.email,
-        emailVerified: false,
-        updatedAt: new Date(),
+        name: dto.name,
+        roles_id: userRole.id,
+        created_at: new Date(),
+        updated_at: new Date()
       },
     });
   }
