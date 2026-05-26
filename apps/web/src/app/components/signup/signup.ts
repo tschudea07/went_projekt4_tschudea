@@ -1,9 +1,5 @@
 import { Component, signal } from '@angular/core';
-import {
-  form,
-  FormField,
-  validateStandardSchema,
-} from '@angular/forms/signals';
+import { form, FormField, validateStandardSchema } from '@angular/forms/signals';
 
 import { signUpSchema, type SignUpType } from '@lib/schemas/user.schema';
 import { authClient } from '@lib/auth-client';
@@ -15,16 +11,15 @@ import { Router } from '@angular/router';
   templateUrl: './signup.html',
   styleUrl: './signup.css',
 })
-
 export class Signup {
-    constructor(private router: Router) {}
+  constructor(private router: Router) {}
 
-formData = signal<SignUpType>({
+  formData = signal<SignUpType>({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
-});
+    confirmPassword: '',
+  });
 
   error = signal<string>('');
 
@@ -45,14 +40,16 @@ formData = signal<SignUpType>({
       name: this.formData().name,
       email: this.formData().email,
       password: this.formData().password,
+      callbackURL: `${window.location.origin}/login?verified=1`,
     });
 
     if (result.error) {
-      this.error.set(result.error.message || "Unkown Error. Please try again later.");
+      this.error.set(result.error.message || 'Unkown Error. Please try again later.');
       return;
     }
 
-     await this.router.navigate(['/login']);
+    await this.router.navigate(['/login'], {
+      queryParams: { registered: '1' },
+    });
   }
-
 }
