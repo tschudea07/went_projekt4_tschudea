@@ -1,0 +1,50 @@
+<header class="site-header">
+  <a class="brand" [routerLink]="brandRoute()" aria-label="Operon Startseite" (click)="closeMenu()">
+    <span class="brand-mark" aria-hidden="true">O</span>
+    <span class="brand-copy">
+      <span class="brand-name">Operon</span>
+      <span class="brand-subtitle">Projektverwaltung</span>
+    </span>
+  </a>
+
+  <button
+    class="menu-button"
+    type="button"
+    aria-controls="primary-navigation"
+    [class.is-open]="isMenuOpen()"
+    [attr.aria-expanded]="isMenuOpen()"
+    [attr.aria-label]="isMenuOpen() ? 'Navigation schließen' : 'Navigation öffnen'"
+    (click)="toggleMenu()"
+  >
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+  </button>
+
+  <nav
+    id="primary-navigation"
+    class="primary-nav"
+    aria-label="Hauptnavigation"
+    [class.is-open]="isMenuOpen()"
+  >
+    @for (item of navItems(); track item.path) {
+      <a
+        class="nav-link"
+        [routerLink]="item.path"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="activeRouteOptions"
+        (click)="closeMenu()"
+      >
+        <span class="nav-label">{{ item.label }}</span>
+        <span class="nav-description">{{ item.description }}</span>
+      </a>
+    }
+
+    @if (authSession.isAuthenticated()) {
+      <button class="nav-link nav-action" type="button" (click)="signOut()">
+        <span class="nav-label">Logout</span>
+        <span class="nav-description">Session beenden</span>
+      </button>
+    }
+  </nav>
+</header>

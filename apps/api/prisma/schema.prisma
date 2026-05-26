@@ -9,51 +9,217 @@ datasource db {
 }
 
 model account {
-  id                    String    @id
+  id                    String    @id(map: "accounts_pk")
   accountId             String
-  providerId            String
+  providerId            String    @unique(map: "ak_accounts_provider")
   userId                String
   accessToken           String?
   refreshToken          String?
   idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @db.Timestamptz(6)
+  user                  user      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "accounts_users")
+}
+
+model app_users {
+  id               String             @id(map: "app_users_pk") @default(dbgenerated("gen_random_uuid()"))
+  user_id          String
+  name             String
+  email            String             @unique(map: "customer_email")
+  roles_id         String
+  availibility     String?
+  start_work_time  DateTime?          @db.Time(6)
+  end_work_time    DateTime?          @db.Time(6)
+  address          String?
+  profile_picture  String?
+  phone            String?
+  gender           String?
+  city             String?
+  region           String?
+  postal_code      String?
+  country          String?
+  created_at       DateTime           @db.Timestamptz(6)
+  updated_at       DateTime           @db.Timestamptz(6)
+  roles            roles              @relation(fields: [roles_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_roles")
+  user             user               @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_user")
+  comments         comments[]
+  project_managers project_managers[]
+  task_logs        task_logs[]
+  users_projects   users_projects[]
+  users_tasks      users_tasks[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model comments {
+  id             String     @id(map: "comments_pk") @default(dbgenerated("gen_random_uuid()"))
+  projects_id    String?
+  tasks_id       String?
+  comments_id    String?
+  users_id       String
+  content        String
+  created_at     DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime   @default(now()) @db.Timestamptz(6)
+  comments       comments?  @relation("commentsTocomments", fields: [comments_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comments_comments")
+  other_comments comments[] @relation("commentsTocomments")
+  projects       projects?  @relation(fields: [projects_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comments_projects")
+  tasks          tasks?     @relation(fields: [tasks_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comments_tasks")
+  app_users      app_users  @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comments_users")
+}
+
+model labels {
+  id          Int     @id(map: "labels_pk") @default(autoincrement())
+  name        String
+  description String?
+  tasks       tasks[]
+}
+
+model milestones {
+  id          Int      @id(map: "milestones_pk") @default(autoincrement())
+  name        String
+  description String?
+  start_date  DateTime @db.Timestamptz(6)
+  end_date    DateTime @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  tasks       tasks[]
+}
+
+model priorities {
+  id    Int     @id(map: "priorities_pk") @default(autoincrement())
+  name  String
+  tasks tasks[]
+}
+
+model project_managers {
+  projects_id String
+  users_id    String
+  projects    projects  @relation(fields: [projects_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "project_managers_projects")
+  app_users   app_users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "project_managers_users")
+
+  @@id([projects_id, users_id], map: "project_managers_pk")
+}
+
+model projects {
+  id               String             @id(map: "projects_pk") @default(dbgenerated("gen_random_uuid()"))
+  status_id        Int
+  title            String
+  description      String
+  start_date       DateTime           @db.Timestamptz(6)
+  end_date         DateTime           @db.Timestamptz(6)
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime           @default(now()) @db.Timestamptz(6)
+  comments         comments[]
+  project_managers project_managers[]
+  status           status             @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "projects_status")
+  tasks            tasks[]
+  users_projects   users_projects[]
+}
+
+model roles {
+  id        String      @id(map: "roles_pk") @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  app_users app_users[]
 }
 
 model session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  id        String   @id(map: "sessions_pk")
+  expiresAt DateTime @db.Timestamptz(6)
+  token     String   @unique(map: "ak_sessions_token")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
   ipAddress String?
   userAgent String?
   userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sessions_users")
 
-  @@index([userId])
+  @@index([userId], map: "idx_sessions_user_id")
+}
+
+model status {
+  id       Int        @id(map: "status_pk") @default(autoincrement())
+  name     String
+  projects projects[]
+  tasks    tasks[]
+}
+
+model task_logs {
+  id         String    @id(map: "task_logs_pk") @default(dbgenerated("gen_random_uuid()"))
+  users_id   String
+  tasks_id   String
+  action     String
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  tasks      tasks     @relation(fields: [tasks_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "task_logs_tasks")
+  app_users  app_users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "task_logs_users")
+}
+
+model tasks {
+  id                    String        @id(map: "tasks_pk") @default(dbgenerated("gen_random_uuid()"))
+  projects_id           String
+  priorities_id         Int
+  status_id             Int
+  title                 String
+  description           String
+  due_date              DateTime      @db.Timestamptz(6)
+  weight                Int?
+  dependent_on_tasks_id String?
+  labels_id             Int?
+  milestones_id         Int?
+  created_at            DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime      @default(now()) @db.Timestamptz(6)
+  comments              comments[]
+  task_logs             task_logs[]
+  tasks                 tasks?        @relation("tasksTotasks", fields: [dependent_on_tasks_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "task_dependents_on")
+  other_tasks           tasks[]       @relation("tasksTotasks")
+  labels                labels?       @relation(fields: [labels_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_labels")
+  milestones            milestones?   @relation(fields: [milestones_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_milestones")
+  priorities            priorities    @relation(fields: [priorities_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_priorities")
+  projects              projects      @relation(fields: [projects_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_projects")
+  status                status        @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_status")
+  users_tasks           users_tasks[]
 }
 
 model user {
-  id            String   @id
+  id            String      @id(map: "users_pk")
   name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
+  email         String      @unique(map: "ak_users_email")
+  emailVerified Boolean     @default(false)
   image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime    @default(now()) @db.Timestamptz(6)
+  account       account[]
+  app_users     app_users[]
+  session       session[]
+}
+
+model users_projects {
+  projects_id String
+  users_id    String
+  projects    projects  @relation(fields: [projects_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "teams_projects_projects")
+  app_users   app_users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_projects_users")
+
+  @@id([users_id, projects_id], map: "users_projects_pk")
+}
+
+model users_tasks {
+  tasks_id  String
+  users_id  String
+  tasks     tasks     @relation(fields: [tasks_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "table_35_tasks")
+  app_users app_users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "table_35_users")
+
+  @@id([tasks_id, users_id], map: "users_tasks_pk")
 }
 
 model verification {
-  id         String   @id
+  id         String   @id(map: "verifications_pk")
   identifier String
   value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @db.Timestamptz(6)
 
-  @@index([identifier])
+  @@index([identifier], map: "idx_verifications_identifier")
 }

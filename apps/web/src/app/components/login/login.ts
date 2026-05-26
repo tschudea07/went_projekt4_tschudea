@@ -4,6 +4,7 @@ import { form, FormField, validateStandardSchema } from '@angular/forms/signals'
 import { loginSchema, type LoginType } from '@lib/schemas/user.schema';
 import { authClient } from '@lib/auth-client';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthSessionService } from '../../services/auth-session.service';
 
 @Component({
   selector: 'app-login',
@@ -15,6 +16,7 @@ export class Login {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
+    private authSession: AuthSessionService,
   ) {
     const verificationError = this.route.snapshot.queryParamMap.get('error');
 
@@ -70,6 +72,7 @@ export class Login {
       return;
     }
 
-    await this.router.navigate(['/home']);
+    await this.authSession.refresh();
+    await this.router.navigate(['/create-project']);
   }
 }

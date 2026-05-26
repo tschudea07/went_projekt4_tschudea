@@ -4,6 +4,8 @@ import { form, FormField, validateStandardSchema } from '@angular/forms/signals'
 import { signUpSchema, type SignUpType } from '@lib/schemas/user.schema';
 import { authClient } from '@lib/auth-client';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { UsersService } from '../../services/users.service';
 
 @Component({
   selector: 'app-signup',
@@ -12,7 +14,10 @@ import { Router } from '@angular/router';
   styleUrl: './signup.css',
 })
 export class Signup {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private usersService: UsersService,
+  ) {}
 
   formData = signal<SignUpType>({
     name: '',
@@ -45,6 +50,19 @@ export class Signup {
 
     if (result.error) {
       this.error.set(result.error.message || 'Unkown Error. Please try again later.');
+      return;
+    }
+
+    try {
+      await firstValueFrom(
+        this.usersService.createUser({
+          id: result.data.user.id,
+          name: result.data.user.name,
+          email: result.data.user.email,
+        }),
+      );
+    } catch {
+      this.error.set('Account was created, but saving the user profile failed.');
       return;
     }
 

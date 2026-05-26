@@ -1,65 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { LoginType } from './user.schema';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
-type User = {
-  id: number;
-  name?: string;
-  email: string;
-  password?: string;
-};
+import { PrismaService } from 'src/lib/services/prisma.service';
+import type { CreateUserType } from './user.schema';
 
 @Injectable()
-
 export class UsersService {
-  private users: User[] = [
-    {
-      id: 1,
-      name: 'Peter',
-      email: 'peter@test.com',
-    },
-    {
-      id: 2,
-      name: 'Anna',
-      email: 'anna@test.com',
-    },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.users;
-  }
+  async create(dto: CreateUserType) {
+    const userRole = await this.prisma.roles.findFirst({
+      where: {
+        name: 'admin',
+      },
+    });
 
-  findOne(id: number) {
-    const user = this.users.find((u) => u.id === id);
-
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (!userRole) {
+      throw new NotFoundException(
+        'Role "admin" was not found.',
+      );
     }
 
-    return user;
-  }
-
-  create(dto: LoginType) {
-    const newUser = {
-      id: this.users.length + 1,
-      ...dto,
-    };
-
-    this.users.push(newUser);
-
-    return newUser;
-  }
-
-  remove(id: number) {
-    const userIndex = this.users.findIndex((u) => u.id === id);
-
-    if (userIndex === -1) {
-      throw new NotFoundException('User not found');
-    }
-
-    const deletedUser = this.users[userIndex];
-
-    this.users.splice(userIndex, 1);
-
-    return deletedUser;
+    return this.prisma.app_users.create({
+      data: {
+        user_id: dto.id,
+        email: dto.email,
+        name: dto.name,
+        roles_id: userRole.id,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+    });
   }
 }
