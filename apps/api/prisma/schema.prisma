@@ -11,7 +11,7 @@ datasource db {
 model account {
   id                    String    @id(map: "accounts_pk")
   accountId             String
-  providerId            String    @unique(map: "ak_accounts_provider")
+  providerId            String
   userId                String
   accessToken           String?
   refreshToken          String?
