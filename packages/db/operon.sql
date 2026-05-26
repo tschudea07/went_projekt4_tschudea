@@ -392,3 +392,14 @@ INSERT INTO roles (id, name)
 VALUES
   (gen_random_uuid(), 'admin'),
   (gen_random_uuid(), 'user');
+
+INSERT INTO status (name)
+VALUES
+  ('Planning'),
+  ('Pending'),
+  ('In Progress'),
+  ('On Hold'),
+  ('In Review'),
+  ('Testing'),
+  ('Completed'),
+  ('Cancelled');

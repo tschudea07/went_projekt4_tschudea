@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { auth } from "../src/lib/auth.js";
+import { ProjectsModule } from './modules/projects/projects.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { UsersModule } from './modules/users/users.module';
         rawBody: true,
       },
     }),
+    ProjectsModule,
     UsersModule
   ],
   providers: [],
