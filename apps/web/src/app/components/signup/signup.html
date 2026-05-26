@@ -1,0 +1,95 @@
+<div class="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+  <form (submit)="onSubmit($event)" class="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+    <h1 class="mb-6 text-3xl font-bold text-gray-900">Signup</h1>
+
+    <div class="mb-5">
+      <label class="mb-2 block text-sm font-medium text-gray-700"> Full Name </label>
+
+      <input
+        type="text"
+        [formField]="form.name"
+        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      />
+
+      @if (form.name().touched() && form.name().invalid()) {
+        <ul class="mt-2 space-y-1">
+          @for (error of form.name().errors(); track error) {
+            <li class="text-sm text-red-500">
+              {{ error.message }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="mb-5">
+      <label class="mb-2 block text-sm font-medium text-gray-700"> Email </label>
+
+      <input
+        type="email"
+        [formField]="form.email"
+        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      />
+
+      @if (form.email().touched() && form.email().invalid()) {
+        <ul class="mt-2 space-y-1">
+          @for (error of form.email().errors(); track error) {
+            <li class="text-sm text-red-500">
+              {{ error.message }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="mb-6">
+      <label class="mb-2 block text-sm font-medium text-gray-700"> Password </label>
+
+      <input
+        type="password"
+        [formField]="form.password"
+        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      />
+
+      @if (form.password().touched() && form.password().invalid()) {
+        <ul class="mt-2 space-y-1">
+          @for (error of form.password().errors(); track error) {
+            <li class="text-sm text-red-500">
+              {{ error.message }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    <div class="mb-5">
+      <label class="mb-2 block text-sm font-medium text-gray-700"> Confirm Password </label>
+
+      <input
+        type="password"
+        [formField]="form.confirmPassword"
+        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      />
+
+      @if (form.confirmPassword().touched() && form.confirmPassword().invalid()) {
+        <ul class="mt-2 space-y-1">
+          @for (error of form.confirmPassword().errors(); track error) {
+            <li class="text-sm text-red-500">
+              {{ error.message }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (error().length != 0) {
+      <p class="text-red-500">{{ error() }}</p>
+    }
+    <button
+      type="submit"
+      [disabled]="form().invalid()"
+      class="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+    >
+      Sign Up
+    </button>
+  </form>
+</div>

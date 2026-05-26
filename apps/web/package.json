@@ -24,7 +24,7 @@
     "express": "^5.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "@operon/shared": "workspace:*"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@angular/build": "^21.2.8",

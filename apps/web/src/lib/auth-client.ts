@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
-  baseURL: `${process.env['BETTER_AUTH_URL']}/api/auth`,
+  baseURL: `http://localhost:3000/api/auth`,
   fetchOptions: {
     credentials: "include",
   },
