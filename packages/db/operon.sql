@@ -17,7 +17,6 @@ CREATE TABLE account (
     password text  NULL,
     "createdAt" timestamptz  NOT NULL DEFAULT now(),
     "updatedAt" timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT ak_accounts_provider UNIQUE ("providerId") NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT accounts_pk PRIMARY KEY (id)
 );
 
@@ -387,6 +386,9 @@ ALTER TABLE app_users ADD CONSTRAINT users_user
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
-
 -- End of file.
 
+INSERT INTO roles (id, name)
+VALUES
+  (gen_random_uuid(), 'admin'),
+  (gen_random_uuid(), 'user');
