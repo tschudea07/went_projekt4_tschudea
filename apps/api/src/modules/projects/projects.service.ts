@@ -119,27 +119,46 @@ export class ProjectsService {
   async findMembers(projectId: string, authUserId: string) {
     await this.assertProjectManager(projectId, authUserId);
 
-    const members = await this.prisma.users_projects.findMany({
-      where: {
-        projects_id: projectId,
-      },
-      include: {
-        app_users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const [members, projectManagers] = await Promise.all([
+      this.prisma.users_projects.findMany({
+        where: {
+          projects_id: projectId,
+        },
+        include: {
+          app_users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        app_users: {
-          name: 'asc',
+        orderBy: {
+          app_users: {
+            name: 'asc',
+          },
         },
-      },
-    });
+      }),
+      this.prisma.project_managers.findMany({
+        where: {
+          projects_id: projectId,
+        },
+        select: {
+          users_id: true,
+        },
+      }),
+    ]);
 
-    return members.map((member) => this.toProjectMember(member.app_users));
+    const projectManagerIds = new Set(
+      projectManagers.map((projectManager) => projectManager.users_id),
+    );
+
+    return members.map((member) =>
+      this.toProjectMember(
+        member.app_users,
+        projectManagerIds.has(member.app_users.id),
+      ),
+    );
   }
 
   async addMember(
@@ -276,15 +295,19 @@ export class ProjectsService {
     };
   }
 
-  private toProjectMember(member: {
-    id: string;
-    name: string;
-    email: string;
-  }) {
+  private toProjectMember(
+    member: {
+      id: string;
+      name: string;
+      email: string;
+    },
+    isProjectManager = false,
+  ) {
     return {
       id: member.id,
       name: member.name,
       email: member.email,
+      isProjectManager,
     };
   }
 }

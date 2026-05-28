@@ -59,6 +59,7 @@ describe('ProjectsService', () => {
       id: 'user-1',
       name: 'Member User',
       email: 'member@example.com',
+      isProjectManager: false,
     });
   });
 });

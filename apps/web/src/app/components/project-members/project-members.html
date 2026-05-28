@@ -52,12 +52,16 @@
       } @else {
         <ul>
           @for (member of members(); track member.id) {
-            <li>
+            <li [class.is-manager]="member.isProjectManager">
               <span class="avatar">{{ member.name.slice(0, 1).toUpperCase() }}</span>
-              <span>
+              <span class="member-copy">
                 <strong>{{ member.name }}</strong>
                 <small>{{ member.email }}</small>
               </span>
+
+              @if (member.isProjectManager) {
+                <span class="manager-badge">Project Manager</span>
+              }
             </li>
           }
         </ul>

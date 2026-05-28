@@ -171,6 +171,13 @@ li {
   background: #ffffff;
 }
 
+li.is-manager {
+  border-color: rgba(15, 118, 110, 0.28);
+  background:
+    linear-gradient(135deg, rgba(204, 251, 241, 0.7), rgba(255, 255, 255, 0.95)),
+    #ffffff;
+}
+
 .avatar {
   display: grid;
   width: 2.5rem;
@@ -181,6 +188,23 @@ li {
   background: #ccfbf1;
   color: #0f766e;
   font-weight: 900;
+}
+
+.member-copy {
+  min-width: 0;
+}
+
+.manager-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 strong,
@@ -204,5 +228,14 @@ small {
   .list-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  li {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .manager-badge {
+    margin-left: 3.35rem;
   }
 }

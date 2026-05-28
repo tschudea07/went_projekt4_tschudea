@@ -41,6 +41,7 @@ describe('ProjectsService', () => {
       project_managers: {
         create: jest.fn(),
         findFirst: jest.fn(),
+        findMany: jest.fn(),
       },
       users_projects: {
         create: jest.fn(),
@@ -79,7 +80,10 @@ describe('ProjectsService', () => {
         { email: member.email },
         manager.user_id,
       ),
-    ).resolves.toEqual(member);
+    ).resolves.toEqual({
+      ...member,
+      isProjectManager: false,
+    });
 
     expect(prisma.users_projects.create).toHaveBeenCalledWith({
       data: {
@@ -156,9 +160,53 @@ describe('ProjectsService', () => {
         { email: member.email },
         manager.user_id,
       ),
-    ).resolves.toEqual(member);
+    ).resolves.toEqual({
+      ...member,
+      isProjectManager: false,
+    });
 
     expect(prisma.users_projects.create).not.toHaveBeenCalled();
+  });
+
+  it('marks project managers in the members list', async () => {
+    const { prisma, service } = createService();
+
+    prisma.app_users.findFirst.mockResolvedValue(manager);
+    prisma.projects.findUnique.mockResolvedValue({ id: 'project-id' });
+    prisma.project_managers.findFirst.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.users_projects.findMany.mockResolvedValue([
+      {
+        app_users: manager,
+      },
+      {
+        app_users: member,
+      },
+    ]);
+    prisma.project_managers.findMany.mockResolvedValue([
+      {
+        users_id: manager.id,
+      },
+    ]);
+
+    await expect(
+      service.findMembers('project-id', manager.user_id),
+    ).resolves.toEqual([
+      {
+        id: manager.id,
+        name: manager.name,
+        email: manager.email,
+        isProjectManager: true,
+      },
+      {
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        isProjectManager: false,
+      },
+    ]);
   });
 
   it('adds the creator as project manager and project member', async () => {
