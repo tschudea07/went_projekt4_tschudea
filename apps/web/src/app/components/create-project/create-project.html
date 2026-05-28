@@ -103,6 +103,15 @@
       <p class="success">{{ message() }}</p>
     }
 
+    @if (createdProject(); as project) {
+      <a
+        class="member-link"
+        [routerLink]="['/projects', project.id, 'members']"
+      >
+        Add members to {{ project.title }}
+      </a>
+    }
+
     @if (error().length !== 0) {
       <p class="error">{{ error() }}</p>
     }

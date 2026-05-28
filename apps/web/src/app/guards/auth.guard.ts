@@ -23,5 +23,5 @@ export const guestGuard: CanActivateFn = async () => {
     return true;
   }
 
-  return router.createUrlTree(['/create-project']);
+  return router.createUrlTree(['/projects']);
 };

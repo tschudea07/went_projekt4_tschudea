@@ -1,0 +1,93 @@
+<section class="members-page">
+  <div class="members-shell">
+    <a class="back-link" routerLink="/projects">Back to projects</a>
+
+    <div class="members-card">
+      <div class="form-heading">
+        <p class="eyebrow">Team</p>
+        <h1>Manage project members</h1>
+        <p>Add registered users to this project by email address.</p>
+      </div>
+
+      <form class="member-form" (submit)="onSubmit($event)">
+        <div class="field">
+          <label for="member-email">User email</label>
+          <input
+            id="member-email"
+            type="email"
+            autocomplete="email"
+            [value]="email()"
+            (input)="onEmailInput($event)"
+          />
+
+          @if (emailError().length !== 0) {
+            <p class="field-error">{{ emailError() }}</p>
+          }
+        </div>
+
+        <button type="submit" [disabled]="!canSubmit()">
+          {{ isSubmitting() ? 'Adding...' : 'Add user' }}
+        </button>
+      </form>
+
+      @if (message().length !== 0) {
+        <p class="success">{{ message() }}</p>
+      }
+
+      @if (error().length !== 0) {
+        <p class="error">{{ error() }}</p>
+      }
+    </div>
+
+    <div class="members-list">
+      <div class="list-heading">
+        <h2>Members</h2>
+        <button type="button" (click)="loadMembers()">Refresh</button>
+      </div>
+
+      @if (isLoading()) {
+        <p class="state">Loading members...</p>
+      } @else if (members().length === 0) {
+        <p class="state">No members assigned yet.</p>
+      } @else {
+        <ul>
+          @for (member of members(); track member.id) {
+            <li [class.is-manager]="member.isProjectManager">
+              <span class="avatar">{{ member.name.slice(0, 1).toUpperCase() }}</span>
+              <span class="member-copy">
+                <strong>{{ member.name }}</strong>
+                <small>{{ member.email }}</small>
+              </span>
+
+              @if (member.isProjectManager) {
+                <span class="manager-badge">Project Manager</span>
+              }
+
+              <span class="member-actions">
+                @if (!member.isProjectManager) {
+                  <button
+                    class="secondary-action"
+                    type="button"
+                    [disabled]="isMemberActionPending(member)"
+                    (click)="promoteMember(member)"
+                  >
+                    {{ isMemberActionPending(member) ? 'Saving...' : 'Make manager' }}
+                  </button>
+                }
+
+                <button
+                  class="danger-action"
+                  type="button"
+                  [disabled]="isMemberActionPending(member)"
+                  (click)="removeMember(member)"
+                >
+                  {{ isMemberActionPending(member) ? 'Removing...' : 'Remove' }}
+                </button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</section>
