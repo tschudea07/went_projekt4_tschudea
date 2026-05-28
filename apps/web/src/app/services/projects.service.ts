@@ -70,4 +70,23 @@ export class ProjectsService {
       },
     );
   }
+
+  promoteProjectMember(projectId: string, memberId: string) {
+    return this.http.patch<ProjectMember>(
+      `${this.projectsUrl}/${projectId}/members/${memberId}/manager`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  removeProjectMember(projectId: string, memberId: string) {
+    return this.http.delete<ProjectMember>(
+      `${this.projectsUrl}/${projectId}/members/${memberId}`,
+      {
+        withCredentials: true,
+      },
+    );
+  }
 }

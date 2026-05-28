@@ -62,4 +62,38 @@ describe('ProjectsService', () => {
       isProjectManager: false,
     });
   });
+
+  it('should promote project members with credentials', () => {
+    service.promoteProjectMember('project-1', 'user-1').subscribe();
+
+    const req = httpTesting.expectOne(
+      'http://localhost:3000/projects/project-1/members/user-1/manager',
+    );
+
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.withCredentials).toBe(true);
+    req.flush({
+      id: 'user-1',
+      name: 'Member User',
+      email: 'member@example.com',
+      isProjectManager: true,
+    });
+  });
+
+  it('should remove project members with credentials', () => {
+    service.removeProjectMember('project-1', 'user-1').subscribe();
+
+    const req = httpTesting.expectOne(
+      'http://localhost:3000/projects/project-1/members/user-1',
+    );
+
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.withCredentials).toBe(true);
+    req.flush({
+      id: 'user-1',
+      name: 'Member User',
+      email: 'member@example.com',
+      isProjectManager: false,
+    });
+  });
 });

@@ -195,7 +195,6 @@ li.is-manager {
 }
 
 .manager-badge {
-  margin-left: auto;
   border-radius: 999px;
   padding: 0.45rem 0.7rem;
   background: #0f766e;
@@ -205,6 +204,36 @@ li.is-manager {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.secondary-action,
+.danger-action {
+  border-radius: 999px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.secondary-action {
+  background: #0f172a;
+}
+
+.secondary-action:hover {
+  background: #334155;
+}
+
+.danger-action {
+  background: #dc2626;
+}
+
+.danger-action:hover {
+  background: #b91c1c;
 }
 
 strong,
@@ -236,6 +265,11 @@ small {
   }
 
   .manager-badge {
+    margin-left: 3.35rem;
+  }
+
+  .member-actions {
+    width: 100%;
     margin-left: 3.35rem;
   }
 }

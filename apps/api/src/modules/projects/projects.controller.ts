@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -59,5 +61,32 @@ export class ProjectsController {
     @Session() session: UserSession,
   ) {
     return this.projectsService.addMember(projectId, dto, session.user.id);
+  }
+
+  @Patch(':projectId/members/:memberId/manager')
+  promoteProjectMember(
+    @Param('projectId') projectId: string,
+    @Param('memberId') memberId: string,
+    @Session() session: UserSession,
+  ) {
+    return this.projectsService.promoteMemberToManager(
+      projectId,
+      memberId,
+      session.user.id,
+    );
+  }
+
+  @Delete(':projectId/members/:memberId')
+  @HttpCode(200)
+  removeProjectMember(
+    @Param('projectId') projectId: string,
+    @Param('memberId') memberId: string,
+    @Session() session: UserSession,
+  ) {
+    return this.projectsService.removeMember(
+      projectId,
+      memberId,
+      session.user.id,
+    );
   }
 }

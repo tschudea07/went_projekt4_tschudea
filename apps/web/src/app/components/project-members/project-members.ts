@@ -31,6 +31,7 @@ export class ProjectMembers implements OnInit {
   protected readonly message = signal('');
   protected readonly isLoading = signal(true);
   protected readonly isSubmitting = signal(false);
+  protected readonly actionMemberId = signal<string | null>(null);
 
   protected readonly canSubmit = computed(
     () => this.email().trim().length !== 0 && !this.isSubmitting(),
@@ -117,8 +118,62 @@ export class ProjectMembers implements OnInit {
       if (error.status === 404) {
         return 'Project or user could not be found.';
       }
+
+      if (error.status === 400) {
+        return 'The last project manager cannot be removed.';
+      }
     }
 
     return 'Project members could not be updated.';
+  }
+
+  protected isMemberActionPending(member: ProjectMember) {
+    return this.actionMemberId() === member.id;
+  }
+
+  protected async promoteMember(member: ProjectMember) {
+    this.error.set('');
+    this.message.set('');
+    this.actionMemberId.set(member.id);
+
+    try {
+      const promotedMember = await firstValueFrom(
+        this.projectsService.promoteProjectMember(this.projectId(), member.id),
+      );
+
+      this.message.set(`${promotedMember.name} is now a project manager.`);
+      await this.loadMembers();
+    } catch (error) {
+      this.error.set(this.toErrorMessage(error));
+    } finally {
+      this.actionMemberId.set(null);
+    }
+  }
+
+  protected async removeMember(member: ProjectMember) {
+    const shouldRemove = window.confirm(
+      `Remove ${member.name} from this project?`,
+    );
+
+    if (!shouldRemove) {
+      return;
+    }
+
+    this.error.set('');
+    this.message.set('');
+    this.actionMemberId.set(member.id);
+
+    try {
+      const removedMember = await firstValueFrom(
+        this.projectsService.removeProjectMember(this.projectId(), member.id),
+      );
+
+      this.message.set(`${removedMember.name} was removed from this project.`);
+      await this.loadMembers();
+    } catch (error) {
+      this.error.set(this.toErrorMessage(error));
+    } finally {
+      this.actionMemberId.set(null);
+    }
   }
 }

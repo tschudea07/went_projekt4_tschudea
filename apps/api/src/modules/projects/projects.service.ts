@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -224,6 +225,89 @@ export class ProjectsService {
     return this.toProjectMember(projectMember.app_users);
   }
 
+  async promoteMemberToManager(
+    projectId: string,
+    memberId: string,
+    authUserId: string,
+  ) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const member = await this.findProjectMember(projectId, memberId);
+
+    const existingProjectManager =
+      await this.prisma.project_managers.findUnique({
+        where: {
+          projects_id_users_id: {
+            projects_id: projectId,
+            users_id: memberId,
+          },
+        },
+      });
+
+    if (!existingProjectManager) {
+      await this.prisma.project_managers.create({
+        data: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+    }
+
+    return this.toProjectMember(member.app_users, true);
+  }
+
+  async removeMember(
+    projectId: string,
+    memberId: string,
+    authUserId: string,
+  ) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const member = await this.findProjectMember(projectId, memberId);
+    const projectManager = await this.prisma.project_managers.findUnique({
+      where: {
+        projects_id_users_id: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      },
+    });
+
+    const isProjectManager = projectManager !== null;
+
+    if (isProjectManager) {
+      const projectManagersCount = await this.prisma.project_managers.count({
+        where: {
+          projects_id: projectId,
+        },
+      });
+
+      if (projectManagersCount <= 1) {
+        throw new BadRequestException(
+          'A project needs at least one project manager.',
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.project_managers.deleteMany({
+        where: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+
+      await tx.users_projects.deleteMany({
+        where: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+    });
+
+    return this.toProjectMember(member.app_users, isProjectManager);
+  }
+
   private async findAppUserByAuthId(authUserId: string) {
     const appUser = await this.prisma.app_users.findFirst({
       where: {
@@ -268,6 +352,32 @@ export class ProjectsService {
     }
 
     return appUser;
+  }
+
+  private async findProjectMember(projectId: string, memberId: string) {
+    const member = await this.prisma.users_projects.findUnique({
+      where: {
+        users_id_projects_id: {
+          users_id: memberId,
+          projects_id: projectId,
+        },
+      },
+      include: {
+        app_users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Project member was not found.');
+    }
+
+    return member;
   }
 
   private toProjectSummary(project: {

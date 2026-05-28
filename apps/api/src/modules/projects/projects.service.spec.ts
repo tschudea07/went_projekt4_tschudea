@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -40,11 +41,15 @@ describe('ProjectsService', () => {
       },
       project_managers: {
         create: jest.fn(),
+        count: jest.fn(),
+        deleteMany: jest.fn(),
         findFirst: jest.fn(),
         findMany: jest.fn(),
+        findUnique: jest.fn(),
       },
       users_projects: {
         create: jest.fn(),
+        deleteMany: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
       },
@@ -262,5 +267,145 @@ describe('ProjectsService', () => {
         users_id: manager.id,
       },
     });
+  });
+
+  it('promotes a project member to project manager', async () => {
+    const { prisma, service } = createService();
+
+    prisma.app_users.findFirst.mockResolvedValue(manager);
+    prisma.projects.findUnique.mockResolvedValue({ id: 'project-id' });
+    prisma.project_managers.findFirst.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.users_projects.findUnique.mockResolvedValue({
+      app_users: member,
+    });
+    prisma.project_managers.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.promoteMemberToManager(
+        'project-id',
+        member.id,
+        manager.user_id,
+      ),
+    ).resolves.toEqual({
+      ...member,
+      isProjectManager: true,
+    });
+
+    expect(prisma.project_managers.create).toHaveBeenCalledWith({
+      data: {
+        projects_id: 'project-id',
+        users_id: member.id,
+      },
+    });
+  });
+
+  it('removes a regular project member', async () => {
+    const { prisma, service } = createService();
+
+    prisma.app_users.findFirst.mockResolvedValue(manager);
+    prisma.projects.findUnique.mockResolvedValue({ id: 'project-id' });
+    prisma.project_managers.findFirst.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.users_projects.findUnique.mockResolvedValue({
+      app_users: member,
+    });
+    prisma.project_managers.findUnique.mockResolvedValue(null);
+    prisma.$transaction.mockImplementation((callback) =>
+      callback({
+        project_managers: {
+          deleteMany: prisma.project_managers.deleteMany,
+        },
+        users_projects: {
+          deleteMany: prisma.users_projects.deleteMany,
+        },
+      }),
+    );
+
+    await expect(
+      service.removeMember('project-id', member.id, manager.user_id),
+    ).resolves.toEqual({
+      ...member,
+      isProjectManager: false,
+    });
+
+    expect(prisma.users_projects.deleteMany).toHaveBeenCalledWith({
+      where: {
+        projects_id: 'project-id',
+        users_id: member.id,
+      },
+    });
+  });
+
+  it('removes a project manager when another manager remains', async () => {
+    const { prisma, service } = createService();
+
+    prisma.app_users.findFirst.mockResolvedValue(manager);
+    prisma.projects.findUnique.mockResolvedValue({ id: 'project-id' });
+    prisma.project_managers.findFirst.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.users_projects.findUnique.mockResolvedValue({
+      app_users: member,
+    });
+    prisma.project_managers.findUnique.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: member.id,
+    });
+    prisma.project_managers.count.mockResolvedValue(2);
+    prisma.$transaction.mockImplementation((callback) =>
+      callback({
+        project_managers: {
+          deleteMany: prisma.project_managers.deleteMany,
+        },
+        users_projects: {
+          deleteMany: prisma.users_projects.deleteMany,
+        },
+      }),
+    );
+
+    await expect(
+      service.removeMember('project-id', member.id, manager.user_id),
+    ).resolves.toEqual({
+      ...member,
+      isProjectManager: true,
+    });
+
+    expect(prisma.project_managers.deleteMany).toHaveBeenCalledWith({
+      where: {
+        projects_id: 'project-id',
+        users_id: member.id,
+      },
+    });
+  });
+
+  it('rejects removing the last project manager', async () => {
+    const { prisma, service } = createService();
+
+    prisma.app_users.findFirst.mockResolvedValue(manager);
+    prisma.projects.findUnique.mockResolvedValue({ id: 'project-id' });
+    prisma.project_managers.findFirst.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.users_projects.findUnique.mockResolvedValue({
+      app_users: manager,
+    });
+    prisma.project_managers.findUnique.mockResolvedValue({
+      projects_id: 'project-id',
+      users_id: manager.id,
+    });
+    prisma.project_managers.count.mockResolvedValue(1);
+
+    await expect(
+      service.removeMember('project-id', manager.id, manager.user_id),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });
