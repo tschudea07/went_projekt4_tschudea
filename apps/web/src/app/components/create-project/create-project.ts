@@ -1,12 +1,17 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { form, FormField, validateStandardSchema } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { createProjectSchema, type CreateProjectType } from '@lib/schemas/project.schema';
 import { firstValueFrom } from 'rxjs';
-import { ProjectStatus, ProjectsService } from '../../services/projects.service';
+import {
+  ProjectStatus,
+  ProjectSummary,
+  ProjectsService,
+} from '../../services/projects.service';
 
 @Component({
   selector: 'app-create-project',
-  imports: [FormField],
+  imports: [FormField, RouterLink],
   templateUrl: './create-project.html',
   styleUrl: './create-project.css',
 })
@@ -23,6 +28,7 @@ export class CreateProject implements OnInit {
 
   error = signal('');
   message = signal('');
+  createdProject = signal<ProjectSummary | null>(null);
   statuses = signal<ProjectStatus[]>([]);
   statusTouched = signal(false);
 
@@ -54,14 +60,18 @@ export class CreateProject implements OnInit {
 
     this.error.set('');
     this.message.set('');
+    this.createdProject.set(null);
 
     if (this.form().invalid()) {
       return;
     }
 
     try {
-      await firstValueFrom(this.projectsService.createProject(this.formData()));
+      const project = await firstValueFrom(
+        this.projectsService.createProject(this.formData()),
+      );
       this.message.set('Project created.');
+      this.createdProject.set(project);
       this.formData.set({
         statusId: 0,
         title: '',
