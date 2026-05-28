@@ -27,12 +27,17 @@ export class Header implements OnInit {
   };
 
   protected readonly brandRoute = computed(() =>
-    this.authSession.isAuthenticated() ? '/create-project' : '/login',
+    this.authSession.isAuthenticated() ? '/projects' : '/login',
   );
 
   protected readonly navItems = computed<NavItem[]>(() => {
     if (this.authSession.isAuthenticated()) {
       return [
+        {
+          label: 'Projects',
+          path: '/projects',
+          description: 'Projektübersicht',
+        },
         {
           label: 'Create Project',
           path: '/create-project',

@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/lib/services/prisma.service';
-import type { CreateProjectType } from './project.schema';
+import type {
+  AddProjectMemberType,
+  CreateProjectType,
+} from './project.schema';
 
 @Injectable()
 export class ProjectsService {
@@ -54,7 +62,362 @@ export class ProjectsService {
         },
       });
 
-      return project;
+      await tx.users_projects.create({
+        data: {
+          projects_id: project.id,
+          users_id: appUser.id,
+        },
+      });
+
+      return this.toProjectSummary({
+        ...project,
+        status,
+        _count: {
+          users_projects: 1,
+        },
+      });
     });
+  }
+
+  async findMine(authUserId: string) {
+    const appUser = await this.findAppUserByAuthId(authUserId);
+
+    const projects = await this.prisma.projects.findMany({
+      where: {
+        OR: [
+          {
+            project_managers: {
+              some: {
+                users_id: appUser.id,
+              },
+            },
+          },
+          {
+            users_projects: {
+              some: {
+                users_id: appUser.id,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        status: true,
+        _count: {
+          select: {
+            users_projects: true,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return projects.map((project) => this.toProjectSummary(project));
+  }
+
+  async findMembers(projectId: string, authUserId: string) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const [members, projectManagers] = await Promise.all([
+      this.prisma.users_projects.findMany({
+        where: {
+          projects_id: projectId,
+        },
+        include: {
+          app_users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          app_users: {
+            name: 'asc',
+          },
+        },
+      }),
+      this.prisma.project_managers.findMany({
+        where: {
+          projects_id: projectId,
+        },
+        select: {
+          users_id: true,
+        },
+      }),
+    ]);
+
+    const projectManagerIds = new Set(
+      projectManagers.map((projectManager) => projectManager.users_id),
+    );
+
+    return members.map((member) =>
+      this.toProjectMember(
+        member.app_users,
+        projectManagerIds.has(member.app_users.id),
+      ),
+    );
+  }
+
+  async addMember(
+    projectId: string,
+    dto: AddProjectMemberType,
+    authUserId: string,
+  ) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const member = await this.prisma.app_users.findFirst({
+      where: {
+        email: dto.email,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('User was not found.');
+    }
+
+    const existingMember = await this.prisma.users_projects.findUnique({
+      where: {
+        users_id_projects_id: {
+          users_id: member.id,
+          projects_id: projectId,
+        },
+      },
+      include: {
+        app_users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (existingMember) {
+      return this.toProjectMember(existingMember.app_users);
+    }
+
+    const projectMember = await this.prisma.users_projects.create({
+      data: {
+        projects_id: projectId,
+        users_id: member.id,
+      },
+      include: {
+        app_users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return this.toProjectMember(projectMember.app_users);
+  }
+
+  async promoteMemberToManager(
+    projectId: string,
+    memberId: string,
+    authUserId: string,
+  ) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const member = await this.findProjectMember(projectId, memberId);
+
+    const existingProjectManager =
+      await this.prisma.project_managers.findUnique({
+        where: {
+          projects_id_users_id: {
+            projects_id: projectId,
+            users_id: memberId,
+          },
+        },
+      });
+
+    if (!existingProjectManager) {
+      await this.prisma.project_managers.create({
+        data: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+    }
+
+    return this.toProjectMember(member.app_users, true);
+  }
+
+  async removeMember(
+    projectId: string,
+    memberId: string,
+    authUserId: string,
+  ) {
+    await this.assertProjectManager(projectId, authUserId);
+
+    const member = await this.findProjectMember(projectId, memberId);
+    const projectManager = await this.prisma.project_managers.findUnique({
+      where: {
+        projects_id_users_id: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      },
+    });
+
+    const isProjectManager = projectManager !== null;
+
+    if (isProjectManager) {
+      const projectManagersCount = await this.prisma.project_managers.count({
+        where: {
+          projects_id: projectId,
+        },
+      });
+
+      if (projectManagersCount <= 1) {
+        throw new BadRequestException(
+          'A project needs at least one project manager.',
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.project_managers.deleteMany({
+        where: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+
+      await tx.users_projects.deleteMany({
+        where: {
+          projects_id: projectId,
+          users_id: memberId,
+        },
+      });
+    });
+
+    return this.toProjectMember(member.app_users, isProjectManager);
+  }
+
+  private async findAppUserByAuthId(authUserId: string) {
+    const appUser = await this.prisma.app_users.findFirst({
+      where: {
+        user_id: authUserId,
+      },
+    });
+
+    if (!appUser) {
+      throw new NotFoundException('App user was not found.');
+    }
+
+    return appUser;
+  }
+
+  private async assertProjectManager(projectId: string, authUserId: string) {
+    const appUser = await this.findAppUserByAuthId(authUserId);
+
+    const project = await this.prisma.projects.findUnique({
+      where: {
+        id: projectId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project was not found.');
+    }
+
+    const projectManager = await this.prisma.project_managers.findFirst({
+      where: {
+        projects_id: projectId,
+        users_id: appUser.id,
+      },
+    });
+
+    if (!projectManager) {
+      throw new ForbiddenException(
+        'Only project managers can manage project members.',
+      );
+    }
+
+    return appUser;
+  }
+
+  private async findProjectMember(projectId: string, memberId: string) {
+    const member = await this.prisma.users_projects.findUnique({
+      where: {
+        users_id_projects_id: {
+          users_id: memberId,
+          projects_id: projectId,
+        },
+      },
+      include: {
+        app_users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Project member was not found.');
+    }
+
+    return member;
+  }
+
+  private toProjectSummary(project: {
+    id: string;
+    title: string;
+    description: string;
+    start_date: Date;
+    end_date: Date;
+    status: {
+      id: number;
+      name: string;
+    };
+    _count: {
+      users_projects: number;
+    };
+  }) {
+    return {
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      startDate: project.start_date.toISOString(),
+      endDate: project.end_date.toISOString(),
+      status: project.status,
+      membersCount: project._count.users_projects,
+    };
+  }
+
+  private toProjectMember(
+    member: {
+      id: string;
+      name: string;
+      email: string;
+    },
+    isProjectManager = false,
+  ) {
+    return {
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      isProjectManager,
+    };
   }
 }

@@ -19,3 +19,13 @@ export const createProjectSchema = z
   });
 
 export type CreateProjectType = z.infer<typeof createProjectSchema>;
+
+export const addProjectMemberSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .pipe(z.email())
+    .transform((email) => email.toLowerCase()),
+});
+
+export type AddProjectMemberType = z.infer<typeof addProjectMemberSchema>;
